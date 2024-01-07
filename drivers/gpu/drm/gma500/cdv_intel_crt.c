@@ -247,6 +247,7 @@ void cdv_intel_crt_init(struct drm_device *dev,
 	struct gma_encoder *gma_encoder;
 	struct drm_connector *connector;
 	struct drm_encoder *encoder;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 
 	u32 i2c_reg;
 
@@ -278,7 +279,7 @@ void cdv_intel_crt_init(struct drm_device *dev,
 	gma_encoder->ddc_bus = psb_intel_i2c_create(dev,
 							  i2c_reg, "CRTDDC_A");
 	if (!gma_encoder->ddc_bus) {
-		dev_printk(KERN_ERR, &dev->pdev->dev, "DDC bus registration "
+		dev_printk(KERN_ERR, &pdev->dev, "DDC bus registration "
 			   "failed.\n");
 		goto failed_ddc;
 	}

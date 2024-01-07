@@ -12,6 +12,7 @@
 
 #include <drm/drm_crtc.h>
 #include <drm/drm_fourcc.h>
+#include <drm/drm_framebuffer.h>
 #include <drm/drm_vblank.h>
 
 #include "framebuffer.h"
@@ -51,6 +52,7 @@ int gma_pipe_set_base(struct drm_crtc *crtc, int x, int y,
 		      struct drm_framebuffer *old_fb)
 {
 	struct drm_device *dev = crtc->dev;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	struct drm_psb_private *dev_priv = dev->dev_private;
 	struct gma_crtc *gma_crtc = to_gma_crtc(crtc);
 	struct drm_framebuffer *fb = crtc->primary->fb;
@@ -112,7 +114,7 @@ int gma_pipe_set_base(struct drm_crtc *crtc, int x, int y,
 	/* FIXME: Investigate whether this really is the base for psb and why
 		  the linear offset is named base for the other chips. map->surf
 		  should be the base and map->linoff the offset for all chips */
-	if (IS_PSB(dev)) {
+	if (IS_PSB(pdev)) {
 		REG_WRITE(map->base, offset + start);
 		REG_READ(map->base);
 	} else {
@@ -189,6 +191,7 @@ int gma_crtc_gamma_set(struct drm_crtc *crtc, u16 *red, u16 *green, u16 *blue,
 void gma_crtc_dpms(struct drm_crtc *crtc, int mode)
 {
 	struct drm_device *dev = crtc->dev;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	struct drm_psb_private *dev_priv = dev->dev_private;
 	struct gma_crtc *gma_crtc = to_gma_crtc(crtc);
 	int pipe = gma_crtc->pipe;
@@ -199,7 +202,7 @@ void gma_crtc_dpms(struct drm_crtc *crtc, int mode)
 	 * and on, we should map those modes to DRM_MODE_DPMS_OFF in the CRTC.
 	 */
 
-	if (IS_CDV(dev))
+	if (IS_CDV(pdev))
 		dev_priv->ops->disable_sr(dev);
 
 	switch (mode) {
@@ -311,7 +314,7 @@ void gma_crtc_dpms(struct drm_crtc *crtc, int mode)
 		break;
 	}
 
-	if (IS_CDV(dev))
+	if (IS_CDV(pdev))
 		dev_priv->ops->update_wm(dev, crtc);
 
 	/* Set FIFO watermarks */
@@ -556,15 +559,16 @@ int gma_crtc_set_config(struct drm_mode_set *set,
 			struct drm_modeset_acquire_ctx *ctx)
 {
 	struct drm_device *dev = set->crtc->dev;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	struct drm_psb_private *dev_priv = dev->dev_private;
 	int ret;
 
 	if (!dev_priv->rpm_enabled)
 		return drm_crtc_helper_set_config(set, ctx);
 
-	pm_runtime_forbid(&dev->pdev->dev);
+	pm_runtime_forbid(&pdev->dev);
 	ret = drm_crtc_helper_set_config(set, ctx);
-	pm_runtime_allow(&dev->pdev->dev);
+	pm_runtime_allow(&pdev->dev);
 
 	return ret;
 }

@@ -17,6 +17,16 @@
 #include <drm/drm_vma_manager.h>
 
 #include "psb_drv.h"
+#include "gem.h"
+
+static inline vm_fault_t vmf_error(int err)
+{
+	if (err == -ENOMEM)
+		return VM_FAULT_OOM;
+	else if (err == -EHWPOISON)
+		return VM_FAULT_HWPOISON;
+	return VM_FAULT_SIGBUS;
+}
 
 void psb_gem_free_object(struct drm_gem_object *obj)
 {
@@ -70,8 +80,10 @@ int psb_gem_create(struct drm_file *file, struct drm_device *dev, u64 size,
 		dev_err(dev->dev, "GEM init failed for %lld\n", size);
 		return -ENOMEM;
 	}
+#ifdef __linux__
 	/* Limit the object to 32bit mappings */
 	mapping_set_gfp_mask(r->gem.filp->f_mapping, GFP_KERNEL | __GFP_DMA32);
+#endif
 	/* Give the object a handle so we can carry it more easily */
 	ret = drm_gem_handle_create(file, &r->gem, &handle);
 	if (ret) {
@@ -166,7 +178,7 @@ vm_fault_t psb_gem_fault(struct vm_fault *vmf)
 		pfn = (dev_priv->stolen_base + r->offset) >> PAGE_SHIFT;
 	else
 		pfn = page_to_pfn(r->pages[page_offset]);
-	ret = vmf_insert_pfn(vma, vmf->address, pfn);
+	ret = lkpi_vmf_insert_pfn_prot_locked(vma, vmf->address, pfn, vma->vm_page_prot);
 fail:
 	mutex_unlock(&dev_priv->mmap_mutex);
 

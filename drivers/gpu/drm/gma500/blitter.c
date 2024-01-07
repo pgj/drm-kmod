@@ -16,9 +16,11 @@ int gma_blt_wait_idle(struct drm_psb_private *dev_priv)
 {
 	unsigned long stop = jiffies + HZ;
 	int busy = 1;
+	struct drm_device *dev = dev_priv->dev;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 
 	/* NOP for Cedarview */
-	if (IS_CDV(dev_priv->dev))
+	if (IS_CDV(pdev))
 		return 0;
 
 	/* First do a quick check */

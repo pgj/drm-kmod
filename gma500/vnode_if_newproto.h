@@ -1,8 +1,6 @@
 /*
  * This file is @generated automatically.
  * Do not modify anything in here by hand.
- *
- * Created from $FreeBSD$
  */
 
 
@@ -49,6 +47,7 @@ struct vop_vector {
 	vop_bmap_t	*vop_bmap;
 	vop_strategy_t	*vop_strategy;
 	vop_getwritemount_t	*vop_getwritemount;
+	vop_getlowvnode_t	*vop_getlowvnode;
 	vop_print_t	*vop_print;
 	vop_pathconf_t	*vop_pathconf;
 	vop_advlock_t	*vop_advlock;
@@ -82,6 +81,7 @@ struct vop_vector {
 	vop_fdatasync_t	*vop_fdatasync;
 	vop_copy_file_range_t	*vop_copy_file_range;
 	vop_vput_pair_t	*vop_vput_pair;
+	vop_deallocate_t	*vop_deallocate;
 	vop_spare1_t	*vop_spare1;
 	vop_spare2_t	*vop_spare2;
 	vop_spare3_t	*vop_spare3;

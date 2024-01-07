@@ -9,6 +9,7 @@
 #define _PSB_GTT_H_
 
 #include <drm/drm_gem.h>
+#include <linux/ioport.h>
 
 /* This wants cleaning up with respect to the psb_dev and un-needed stuff */
 struct psb_gtt {

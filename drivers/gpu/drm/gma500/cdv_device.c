@@ -17,8 +17,8 @@
 #include "psb_intel_reg.h"
 #include "psb_reg.h"
 
-#define VGA_SR_INDEX		0x3c4
-#define VGA_SR_DATA		0x3c5
+#define VGA_SR_INDEX		(u_char) 0x3c4
+#define VGA_SR_DATA		(u_char) 0x3c5
 
 static void cdv_disable_vga(struct drm_device *dev)
 {
@@ -95,13 +95,14 @@ static u32 cdv_get_max_backlight(struct drm_device *dev)
 static int cdv_get_brightness(struct backlight_device *bd)
 {
 	struct drm_device *dev = bl_get_data(bd);
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	u32 val = REG_READ(BLC_PWM_CTL) & BACKLIGHT_DUTY_CYCLE_MASK;
 
 	if (cdv_backlight_combination_mode(dev)) {
 		u8 lbpc;
 
 		val &= ~1;
-		pci_read_config_byte(dev->pdev, 0xF4, &lbpc);
+		pci_read_config_byte(pdev, 0xF4, &lbpc);
 		val *= lbpc;
 	}
 	return (val * 100)/cdv_get_max_backlight(dev);
@@ -111,6 +112,7 @@ static int cdv_get_brightness(struct backlight_device *bd)
 static int cdv_set_brightness(struct backlight_device *bd)
 {
 	struct drm_device *dev = bl_get_data(bd);
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	int level = bd->props.brightness;
 	u32 blc_pwm_ctl;
 
@@ -128,7 +130,7 @@ static int cdv_set_brightness(struct backlight_device *bd)
 		lbpc = level * 0xfe / max + 1;
 		level /= lbpc;
 
-		pci_write_config_byte(dev->pdev, 0xF4, lbpc);
+		pci_write_config_byte(pdev, 0xF4, lbpc);
 	}
 
 	blc_pwm_ctl = REG_READ(BLC_PWM_CTL) & ~BACKLIGHT_DUTY_CYCLE_MASK;
@@ -149,7 +151,7 @@ static int cdv_backlight_init(struct drm_device *dev)
 
 	memset(&props, 0, sizeof(struct backlight_properties));
 	props.max_brightness = 100;
-	props.type = BACKLIGHT_PLATFORM;
+	props.type = BACKLIGHT_RAW;
 
 	cdv_backlight_device = backlight_device_register("psb-bl",
 					NULL, (void *)dev, &cdv_ops, &props);
@@ -205,8 +207,9 @@ static inline void CDV_MSG_WRITE32(int domain, uint port, uint offset,
 static void cdv_init_pm(struct drm_device *dev)
 {
 	struct drm_psb_private *dev_priv = dev->dev_private;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	u32 pwr_cnt;
-	int domain = pci_domain_nr(dev->pdev->bus);
+	int domain = pci_domain_nr(pdev->bus);
 	int i;
 
 	dev_priv->apm_base = CDV_MSG_READ32(domain, PSB_PUNIT_PORT,
@@ -242,7 +245,8 @@ static void cdv_errata(struct drm_device *dev)
 	 *	Bonus Launch to work around the issue, by degrading
 	 *	performance.
 	 */
-	 CDV_MSG_WRITE32(pci_domain_nr(dev->pdev->bus), 3, 0x30, 0x08027108);
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
+	CDV_MSG_WRITE32(pci_domain_nr(pdev->bus), 3, 0x30, 0x08027108);
 }
 
 /**
@@ -257,10 +261,11 @@ static int cdv_save_display_registers(struct drm_device *dev)
 	struct drm_psb_private *dev_priv = dev->dev_private;
 	struct psb_save_area *regs = &dev_priv->regs;
 	struct drm_connector *connector;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 
 	dev_dbg(dev->dev, "Saving GPU registers.\n");
 
-	pci_read_config_byte(dev->pdev, 0xF4, &regs->cdv.saveLBB);
+	pci_read_config_byte(pdev, 0xF4, &regs->cdv.saveLBB);
 
 	regs->cdv.saveDSPCLK_GATE_D = REG_READ(DSPCLK_GATE_D);
 	regs->cdv.saveRAMCLK_GATE_D = REG_READ(RAMCLK_GATE_D);
@@ -311,9 +316,10 @@ static int cdv_restore_display_registers(struct drm_device *dev)
 	struct drm_psb_private *dev_priv = dev->dev_private;
 	struct psb_save_area *regs = &dev_priv->regs;
 	struct drm_connector *connector;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	u32 temp;
 
-	pci_write_config_byte(dev->pdev, 0xF4, regs->cdv.saveLBB);
+	pci_write_config_byte(pdev, 0xF4, regs->cdv.saveLBB);
 
 	REG_WRITE(DSPCLK_GATE_D, regs->cdv.saveDSPCLK_GATE_D);
 	REG_WRITE(RAMCLK_GATE_D, regs->cdv.saveRAMCLK_GATE_D);
@@ -568,9 +574,10 @@ static const struct psb_offset cdv_regmap[2] = {
 static int cdv_chip_setup(struct drm_device *dev)
 {
 	struct drm_psb_private *dev_priv = dev->dev_private;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	INIT_WORK(&dev_priv->hotplug_work, cdv_hotplug_work_func);
 
-	if (pci_enable_msi(dev->pdev))
+	if (pci_enable_msi(pdev))
 		dev_warn(dev->dev, "Enabling MSI failed!\n");
 	dev_priv->regmap = cdv_regmap;
 	gma_get_core_freq(dev);

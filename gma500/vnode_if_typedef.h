@@ -1,8 +1,6 @@
 /*
  * This file is @generated automatically.
  * Do not modify anything in here by hand.
- *
- * Created from $FreeBSD$
  */
 
 
@@ -126,6 +124,9 @@ typedef int vop_strategy_t(struct vop_strategy_args *);
 struct vop_getwritemount_args;
 typedef int vop_getwritemount_t(struct vop_getwritemount_args *);
 
+struct vop_getlowvnode_args;
+typedef int vop_getlowvnode_t(struct vop_getlowvnode_args *);
+
 struct vop_print_args;
 typedef int vop_print_t(struct vop_print_args *);
 
@@ -224,6 +225,9 @@ typedef int vop_copy_file_range_t(struct vop_copy_file_range_args *);
 
 struct vop_vput_pair_args;
 typedef int vop_vput_pair_t(struct vop_vput_pair_args *);
+
+struct vop_deallocate_args;
+typedef int vop_deallocate_t(struct vop_deallocate_args *);
 
 struct vop_spare1_args;
 typedef int vop_spare1_t(struct vop_spare1_args *);

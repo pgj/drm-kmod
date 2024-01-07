@@ -486,6 +486,7 @@ void cdv_intel_lvds_init(struct drm_device *dev,
 	struct drm_display_mode *scan;
 	struct drm_crtc *crtc;
 	struct drm_psb_private *dev_priv = dev->dev_private;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	u32 lvds;
 	int pipe;
 	u8 pin;
@@ -554,7 +555,7 @@ void cdv_intel_lvds_init(struct drm_device *dev,
 							 "LVDSBLC_B");
 	if (!gma_encoder->i2c_bus) {
 		dev_printk(KERN_ERR,
-			&dev->pdev->dev, "I2C bus registration failed.\n");
+			&pdev->dev, "I2C bus registration failed.\n");
 		goto failed_blc_i2c;
 	}
 	gma_encoder->i2c_bus->slave_addr = 0x2C;
@@ -575,7 +576,7 @@ void cdv_intel_lvds_init(struct drm_device *dev,
 							 GPIOC,
 							 "LVDSDDC_C");
 	if (!gma_encoder->ddc_bus) {
-		dev_printk(KERN_ERR, &dev->pdev->dev,
+		dev_printk(KERN_ERR, &pdev->dev,
 			   "DDC bus registration " "failed.\n");
 		goto failed_ddc;
 	}

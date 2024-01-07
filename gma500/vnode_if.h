@@ -1,8 +1,6 @@
 /*
  * This file is @generated automatically.
  * Do not modify anything in here by hand.
- *
- * Created from $FreeBSD$
  */
 
 extern struct vnodeop_desc vop_default_desc;
@@ -391,7 +389,6 @@ struct vop_stat_args {
 	struct stat *a_sb;
 	struct ucred *a_active_cred;
 	struct ucred *a_file_cred;
-	struct thread *a_td;
 };
 
 extern struct vnodeop_desc vop_stat_desc;
@@ -403,8 +400,7 @@ static __inline int VOP_STAT(
 	struct vnode *vp,
 	struct stat *sb,
 	struct ucred *active_cred,
-	struct ucred *file_cred,
-	struct thread *td)
+	struct ucred *file_cred)
 {
 	struct vop_stat_args a;
 
@@ -413,7 +409,6 @@ static __inline int VOP_STAT(
 	a.a_sb = sb;
 	a.a_active_cred = active_cred;
 	a.a_file_cred = file_cred;
-	a.a_td = td;
 
 #if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
 	if (!SDT_PROBES_ENABLED())
@@ -949,7 +944,7 @@ struct vop_readdir_args {
 	struct ucred *a_cred;
 	int *a_eofflag;
 	int *a_ncookies;
-	u_long **a_cookies;
+	uint64_t **a_cookies;
 };
 
 extern struct vnodeop_desc vop_readdir_desc;
@@ -963,7 +958,7 @@ static __inline int VOP_READDIR(
 	struct ucred *cred,
 	int *eofflag,
 	int *ncookies,
-	u_long **cookies)
+	uint64_t **cookies)
 {
 	struct vop_readdir_args a;
 
@@ -1254,6 +1249,40 @@ static __inline int VOP_GETWRITEMOUNT(
 		return (VOP_GETWRITEMOUNT_APV(vp->v_op, &a));
 #else
 	return (VOP_GETWRITEMOUNT_APV(vp->v_op, &a));
+#endif
+}
+
+struct vop_getlowvnode_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_vp;
+	struct vnode **a_vplp;
+	int a_flags;
+};
+
+extern struct vnodeop_desc vop_getlowvnode_desc;
+
+int VOP_GETLOWVNODE_AP(struct vop_getlowvnode_args *);
+int VOP_GETLOWVNODE_APV(struct vop_vector *vop, struct vop_getlowvnode_args *);
+
+static __inline int VOP_GETLOWVNODE(
+	struct vnode *vp,
+	struct vnode **vplp,
+	int flags)
+{
+	struct vop_getlowvnode_args a;
+
+	a.a_gen.a_desc = &vop_getlowvnode_desc;
+	a.a_vp = vp;
+	a.a_vplp = vplp;
+	a.a_flags = flags;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_getlowvnode(&a));
+	else
+		return (VOP_GETLOWVNODE_APV(vp->v_op, &a));
+#else
+	return (VOP_GETLOWVNODE_APV(vp->v_op, &a));
 #endif
 }
 
@@ -2422,6 +2451,49 @@ static __inline int VOP_VPUT_PAIR(
 		return (VOP_VPUT_PAIR_APV(dvp->v_op, &a));
 #else
 	return (VOP_VPUT_PAIR_APV(dvp->v_op, &a));
+#endif
+}
+
+struct vop_deallocate_args {
+	struct vop_generic_args a_gen;
+	struct vnode *a_vp;
+	off_t *a_offset;
+	off_t *a_len;
+	int a_flags;
+	int a_ioflag;
+	struct ucred *a_cred;
+};
+
+extern struct vnodeop_desc vop_deallocate_desc;
+
+int VOP_DEALLOCATE_AP(struct vop_deallocate_args *);
+int VOP_DEALLOCATE_APV(struct vop_vector *vop, struct vop_deallocate_args *);
+
+static __inline int VOP_DEALLOCATE(
+	struct vnode *vp,
+	off_t *offset,
+	off_t *len,
+	int flags,
+	int ioflag,
+	struct ucred *cred)
+{
+	struct vop_deallocate_args a;
+
+	a.a_gen.a_desc = &vop_deallocate_desc;
+	a.a_vp = vp;
+	a.a_offset = offset;
+	a.a_len = len;
+	a.a_flags = flags;
+	a.a_ioflag = ioflag;
+	a.a_cred = cred;
+
+#if !defined(DEBUG_VFS_LOCKS) && !defined(INVARIANTS) && !defined(KTR)
+	if (!SDT_PROBES_ENABLED())
+		return (vp->v_op->vop_deallocate(&a));
+	else
+		return (VOP_DEALLOCATE_APV(vp->v_op, &a));
+#else
+	return (VOP_DEALLOCATE_APV(vp->v_op, &a));
 #endif
 }
 

@@ -17,6 +17,22 @@
 #define	FBINFO_DEFAULT		0
 #define	FBINFO_VIRTFB		1
 #define	FBINFO_READS_FAST	2
+#define FBINFO_HWACCEL_DISABLED	4
+
+/* hardware supported ops */
+/*  semantics: when a bit is set, it indicates that the operation is
+ *   accelerated by hardware.
+ *  required functions will still work even if the bit is not set.
+ *  optional functions may not even exist if the flag bit is not set.
+ */
+#define FBINFO_HWACCEL_NONE		0x0000
+#define FBINFO_HWACCEL_COPYAREA		0x0100 /* required */
+#define FBINFO_HWACCEL_FILLRECT		0x0200 /* required */
+#define FBINFO_HWACCEL_IMAGEBLIT	0x0400 /* required */
+#define FBINFO_HWACCEL_ROTATE		0x0800 /* optional */
+#define FBINFO_HWACCEL_XPAN		0x1000 /* optional */
+#define FBINFO_HWACCEL_YPAN		0x2000 /* optional */
+#define FBINFO_HWACCEL_YWRAP		0x4000 /* optional */
 
 struct linux_fb_info;
 struct videomode;

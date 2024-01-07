@@ -19,6 +19,7 @@
 
 #include <drm/drm.h>
 #include <drm/drm_crtc.h>
+#include <drm/drm_framebuffer.h>
 #include <drm/drm_fb_helper.h>
 #include <drm/drm_fourcc.h>
 #include <drm/drm_gem_framebuffer_helper.h>
@@ -119,8 +120,7 @@ static vm_fault_t psbfb_vm_fault(struct vm_fault *vmf)
 	for (i = 0; i < page_num; i++) {
 		pfn = (phys_addr >> PAGE_SHIFT);
 
-		ret = vmf_insert_mixed(vma, address,
-				__pfn_to_pfn_t(pfn, PFN_DEV));
+		ret = lkpi_vmf_insert_pfn_prot_locked(vma, address, pfn, vma->vm_page_prot);
 		if (unlikely(ret & VM_FAULT_ERROR))
 			break;
 		address += PAGE_SIZE;
@@ -177,7 +177,13 @@ static const struct fb_ops psbfb_ops = {
 
 static const struct fb_ops psbfb_roll_ops = {
 	.owner = THIS_MODULE,
-	DRM_FB_HELPER_DEFAULT_OPS,
+        .fb_check_var   = drm_fb_helper_check_var,
+        .fb_set_par     = drm_fb_helper_set_par,
+        .fb_setcmap     = drm_fb_helper_setcmap,
+        .fb_blank       = drm_fb_helper_blank,
+        .fb_debug_enter = drm_fb_helper_debug_enter,
+        .fb_debug_leave = drm_fb_helper_debug_leave,
+        .fb_ioctl       = drm_fb_helper_ioctl,
 	.fb_setcolreg = psbfb_setcolreg,
 	.fb_fillrect = drm_fb_helper_cfb_fillrect,
 	.fb_copyarea = drm_fb_helper_cfb_copyarea,
@@ -302,6 +308,7 @@ static int psbfb_create(struct drm_fb_helper *fb_helper,
 				struct drm_fb_helper_surface_size *sizes)
 {
 	struct drm_device *dev = fb_helper->dev;
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	struct drm_psb_private *dev_priv = dev->dev_private;
 	struct fb_info *info;
 	struct drm_framebuffer *fb;
@@ -409,8 +416,8 @@ static int psbfb_create(struct drm_fb_helper *fb_helper,
 
 	drm_fb_helper_fill_info(info, fb_helper, sizes);
 
-	info->fix.mmio_start = pci_resource_start(dev->pdev, 0);
-	info->fix.mmio_len = pci_resource_len(dev->pdev, 0);
+	info->fix.mmio_start = pci_resource_start(pdev, 0);
+	info->fix.mmio_len = pci_resource_len(pdev, 0);
 
 	/* Use default scratch pixmap (info->pixmap.flags = FB_PIXMAP_SYSTEM) */
 
@@ -616,6 +623,7 @@ static void psb_setup_outputs(struct drm_device *dev)
 
 void psb_modeset_init(struct drm_device *dev)
 {
+	struct pci_dev *pdev = to_pci_dev(dev->dev);
 	struct drm_psb_private *dev_priv = dev->dev_private;
 	struct psb_intel_mode_device *mode_dev = &dev_priv->mode_dev;
 	int i;
@@ -629,7 +637,7 @@ void psb_modeset_init(struct drm_device *dev)
 
 	/* set memory base */
 	/* Oaktrail and Poulsbo should use BAR 2*/
-	pci_read_config_dword(dev->pdev, PSB_BSM, (u32 *)
+	pci_read_config_dword(pdev, PSB_BSM, (u32 *)
 					&(dev->mode_config.fb_base));
 
 	/* num pipes is 2 for PSB but 1 for Mrst */
